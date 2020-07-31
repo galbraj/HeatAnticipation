@@ -4,6 +4,8 @@
 # Created 11/09/15 by DJ based on DistractionTask_practice_d3.py
 # Updated 11/10/15 by DJ - cleaned up comments
 # Adapted 7/7/2020 by JG - Heat Anticipation Task
+# Updated 7/16/20 by DJ - pickle->psydat extension, .JPG image extension, set flip time to now after instructions
+# Updated 7/29/20 by DJ - added VAS that's persistent throughout block, fixed color order, removed trial responses, simplified params
 
 
 from psychopy import core, gui, data, event, sound, logging 
@@ -23,40 +25,35 @@ import string
 # ====================== #
 # Save the parameters declared below?
 saveParams = True;
-newParamsFilename = 'SampleExperimentParams.pickle'
+newParamsFilename = 'GalbraithHeatParams.psydat'
 
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
     'nTrials': 40,            # number of trials in each block
-    'nBlocks': 6,            # number of blocks - need time to move electrode in between
+    'nBlocks': 6,             # number of blocks - need time to move electrode in between
     'stimDur': 2,             # time when stimulus is presented (in seconds)
     'painDur': 8,             # time of heat sensation (in seconds)
     'ISI': 1,                 # time between when one stimulus disappears and the next appears (in seconds)
     'painISI': 10,            # time after the heat/pain stimulus
     'tStartup': 2,            # pause time before starting first stimulus
-    #'triggerKey': 't',        # key from scanner that says scan is starting
-    'respKeys': ['r', 'l'],           # keys to be used for responses just to move slider right to left
-    'respAdvances': False,     # will a response end the stimulus?
-    'imageDir': 'Circles/',    # directory containing image stimluli
-    'imageSuffix': '.jpg',   # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
+    'imageDir': 'Circles/',   # directory containing image stimluli
+    'imageSuffix': '.JPG',    # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
 # declare prompt and question files
     'skipPrompts': False,     # go right to the scanner-wait page
-    'promptDir': 'Text/',  # directory containing prompts and questions files
-    'promptFile': 'SamplePrompts.txt', # Name of text file containing prompts 
+    'promptDir': 'Text/',     # directory containing prompts and questions files
+    'promptFile': 'HeatAnticipationPrompts.txt', # Name of text file containing prompts 
     'questionFile': 'Text/AnxietyScale.txt', # Name of text file containing Q&As
-    'questionDownKey': '1',
-    'questionUpKey':'2',
-    'questionSelectKey':'3',
-    'questionSelectAdvances': True,
+    'questionDownKey': '1',   # move slider left
+    'questionUpKey':'2',      # move slider right
     'questionDur': 999.0,
-    'vasStepSize': 0.5, # how far the slider moves with a keypress (increase to move faster)
-    'textColor':(0,0,0), # black
+    'vasStepSize': 0.5,       # how far the slider moves with a keypress (increase to move faster)
+    'textColor':(0,0,0),      # black in rgb255 space or gray in rgb space
 
 # declare display parameters
     'fullScreen': True,       # run in full screen mode?
     'screenToShow': 0,        # display on primary screen (0) or secondary (1)?
-    'fixCrossSize': 10,       # size of cross, in pixels
+    'fixCrossSize': 50,       # size of cross, in pixels
     'fixCrossPos': [0,0],     # (x,y) pos of fixation cross displayed before each stimulus (for gaze drift correction)
     'screenColor':(255,255,255) # in rgb255 space: (r,g,b) all between 0 and 255 - white
 # parallel port parameters
@@ -69,7 +66,7 @@ params = {
 # save parameters - isn't working on personal laptop
 if saveParams:
     dlgResult = gui.fileSaveDlg(prompt='Save Params...',initFilePath = os.getcwd() + '/Params', initFileName = newParamsFilename,
-        allowed="PICKLE files (.pickle)|.pickle|All files (.*)|")
+        allowed="PICKLE files (.psydat)|.psydat|All files (.*)|")
     newParamsFilename = dlgResult
     if newParamsFilename is None: # keep going, but don't save
         saveParams = False
@@ -82,7 +79,7 @@ if saveParams:
 scriptName = os.path.basename(__file__)
 scriptName = os.path.splitext(scriptName)[0] #% remove extension
 try: # try to get a previous parameters file
-    expInfo = fromFile('%s-lastExpInfo.pickle'%scriptName)
+    expInfo = fromFile('%s-lastExpInfo.psydat'%scriptName)
     expInfo['session'] +=1 # automatically increment session number
     expInfo['paramsFile'] = [expInfo['paramsFile'],'Load...']
 except: # if not there then use a default set
@@ -103,7 +100,7 @@ if not dlg.OK:
 # find parameter file
 if expInfo['paramsFile'] == 'Load...':
     dlgResult = gui.fileOpenDlg(prompt='Select parameters file',tryFilePath=os.getcwd(),
-        allowed="PICKLE files (.pickle)|.pickle|All files (.*)|")
+        allowed="PICKLE files (.psydat)|.psydat|All files (.*)|")
     expInfo['paramsFile'] = dlgResult[0]
 # load parameter file
 if expInfo['paramsFile'] not in ['DEFAULT', None]: # otherwise, just use defaults.
@@ -121,7 +118,7 @@ for key in sorted(params.keys()):
 print '}'
     
 # save experimental info
-toFile('%s-lastExpInfo.pickle'%scriptName, expInfo)#save params to file for next time
+toFile('%s-lastExpInfo.psydat'%scriptName, expInfo)#save params to file for next time
 
 #make a log file to save parameter/event  data
 dateStr = ts.strftime("%b_%d_%H%M", ts.localtime()) # add the current time
@@ -194,6 +191,8 @@ print('%d questions loaded from %s'%(len(questions),params['questionFile']))
 
 # get stimulus files
 allImages = glob.glob(params['imageDir']+"*"+params['imageSuffix']) # get all files in <imageDir> that end in .<imageSuffix>.
+# put in alpha order
+allImages.sort()
 print('%d images loaded from %s'%(len(allImages),params['imageDir']))
 # make sure there are enough images - should always be 20
 if len(allImages)< 20:
@@ -204,24 +203,14 @@ green = allImages[0:5]
 yellow = allImages [5:10]
 red = allImages [10:15]
 black = allImages [15:20]
-finalImages = []
-
-#randomize order
 color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random
-random.shuffle(color_list) 
-for i in color_list:
-    if i == 1 :
-        finalImages = finalImages + green
-    elif i == 2 :
-        finalImages = finalImages + yellow
-    elif i == 3 :
-        finalImages = finalImages + red
-    else :
-        finalImages = finalImages + black
- 
-#initialize main image stimulus
-imageName = finalImages[0] # initialize with first image
-stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=imageName, units='pix')
+print('green = %s'%green)
+print('yellow = %s'%yellow)
+print('red = %s'%red)
+print('black = %s'%black)
+
+# create stimImage
+stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0], units='pix')
 
 # read questions and answers from text files
 [topPrompts,bottomPrompts] = BasicPromptTools.ParsePromptFile(params['promptDir']+params['promptFile'])
@@ -243,12 +232,16 @@ def ShowImage(imageName, stimDur=float('Inf')):
     # display info to experimenter
     print('Showing Stimulus %s'%imageName) 
     
-    # Draw image
+    # Set image
     stimImage.setImage(imageName)
-    stimImage.draw()
     # Wait until it's time to display
     while (globalClock.getTime()<tNextFlip[0]):
-        pass
+        win.flip() # to update ratingScale
+    # Start drawing stim image every frame
+    stimImage.autoDraw = True; 
+    ratingScale.autoDraw = False; # to put it on top?
+    ratingScale.autoDraw = True; # to put it on top?
+    
     # log & flip window to display image
     win.logOnFlip(level=logging.EXP, msg='Display %s'%imageName)
     win.flip()
@@ -259,19 +252,18 @@ def ShowImage(imageName, stimDur=float('Inf')):
     # Flush the key buffer and mouse movements
     event.clearEvents()
     # Wait for relevant key press or 'stimDur' seconds
-    respKey = None
     while (globalClock.getTime()<tNextFlip[0]): # until it's time for the next frame
+        win.flip() # to update rating scale
         # get new keys
-        newKeys = event.getKeys(keyList=params['respKeys']+['q','escape'],timeStamped=globalClock)
-        # check each keypress for escape or response keys
+        newKeys = event.getKeys(keyList=['q','escape'],timeStamped=globalClock)
+        # check each keypress for escape keys
         if len(newKeys)>0:
             for thisKey in newKeys: 
                 if thisKey[0] in ['q','escape']: # escape keys
                     CoolDown() # exit gracefully
-                elif thisKey[0] in params['respKeys'] and respKey == None: # only take first keypress
-                    respKey = thisKey # record keypress
-                    if params['respAdvances']: # if response should advance to next stimulus
-                        SetFlipTimeToNow() # reset flip time
+    
+    # Stop drawing stim image every frame
+    stimImage.autoDraw = False;
     
     # Get stimulus time
     tStim = globalClock.getTime()-tStimStart
@@ -283,7 +275,7 @@ def ShowImage(imageName, stimDur=float('Inf')):
         win.logOnFlip(level=logging.EXP, msg='Display Fixation')
         win.flip()
         
-    return (respKey, tStimStart)
+    return tStimStart
 
 # Send parallel port event
 #def SetPortData(data):
@@ -297,6 +289,18 @@ def ShowImage(imageName, stimDur=float('Inf')):
 # Handle end of a session
 def CoolDown():
     
+    # Stop drawing ratingScale (if it exists)
+    try:
+        ratingScale.autoDraw = False
+    except:
+        print('ratingScale does not exist.')
+    # Stop drawing stimImage (if it exists)
+    try:
+        stimImage.autoDraw = False
+    except:
+        print('stimImage does not exist.')
+
+
     # display cool-down message
     message1.setText("That's the end! ")
     message2.setText("Press 'q' or 'escape' to end the session.")
@@ -313,17 +317,19 @@ def CoolDown():
 def BetweenBlock():
     AddToFlipTime(180)
     message1.setText("This concludes the current block. Please wait for further instruction before continuing.")
-    message2.setText("Press any key to continue.")
+    message2.setText("Press SPACE to continue.")
     win.logOnFlip(level=logging.EXP, msg='BetweenBlock')
     message1.draw()
     message2.draw()
     win.flip()
-    thisKey = event.waitKeys()
+    thisKey = event.waitKeys(keyList=['space']) # use space bar to avoid accidental advancing
     if thisKey :
         tNextFlip[0] = globalClock.getTime() + 2.0
 
 #creates a new random color order to ensure each color is presented exactly twice at random within each block
 def colorOrder():
+    #randomize order
+    color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random
     newImages = []
     random.shuffle(color_list)
     for i in color_list:
@@ -336,10 +342,45 @@ def colorOrder():
         else :
             newImages = newImages + black
     # initialize main image stimulus
-    imageName = newImages[0] # initialize with first image
-    stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=imageName, units='pix')
+    stimImage.setImage(newImages[0]) # initialize with first image
     return newImages
 
+def MakePersistentVAS(question, options, win, name='Question', textColor='black',pos=(0.,0.),stepSize=1., scaleTextPos=[0.,0.45], 
+                  labelYPos=-0.27648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, downKey='down',upKey='up',selectKey=[],hideMouse=True):
+    # Make triangle
+    markerStim = visual.ShapeStim(win,lineColor=textColor,fillColor=textColor,vertices=((-markerSize/2.,markerSize*np.sqrt(5./4.)),(markerSize/2.,markerSize*np.sqrt(5./4.)),(0,0)),units='norm',closeShape=True,name='triangle');
+    
+    tickMarks = np.linspace(0,100,len(options)).tolist()
+    if tickLabelWidth==0.0: # if default value, determine automatically to fit all tick mark labels
+      tickWrapWidth = (tickMarks[1]-tickMarks[0])*0.9/100 # *.9 for extra space, /100 for norm units
+    else: # use user-specified value
+      tickWrapWidth = tickLabelWidth;
+    
+    # Create ratingScale
+    ratingScale = visual.RatingScale(win, scale=question, \
+      low=0., high=100., markerStart=50., precision=1., labels=options, tickMarks=tickMarks, tickHeight=tickHeight, \
+      marker=markerStim, markerColor=textColor, markerExpansion=1, singleClick=False, disappear=False, \
+      textSize=0.8, textColor=textColor, textFont='Helvetica Bold', showValue=False, \
+      showAccept=False, acceptKeys=selectKey, acceptPreText='key, click', acceptText='accept?', acceptSize=1.0, \
+      leftKeys=downKey, rightKeys=upKey, respKeys=(), lineColor=textColor, skipKeys=[], \
+      mouseOnly=False, noMouse=hideMouse, size=2.0, stretch=1.0, pos=pos, minTime=0.4, maxTime=np.inf, \
+      flipVert=False, depth=0, name=name, autoLog=True)
+    # Fix text wrapWidth
+    for iLabel in range(len(ratingScale.labels)):
+      ratingScale.labels[iLabel].wrapWidth = tickWrapWidth
+      ratingScale.labels[iLabel].pos = (ratingScale.labels[iLabel].pos[0],labelYPos)
+      ratingScale.labels[iLabel].alignHoriz = 'center'
+    # Move main text
+    ratingScale.scaleDescription.pos = scaleTextPos
+    
+    # Make it persistent by setting autoDraw to True
+    ratingScale.autoDraw = True;
+    
+    # Display until time runs out (or key is pressed, if specified)
+    win.logOnFlip(level=logging.EXP, msg='Display %s'%name)
+    win.flip()
+    
+    return ratingScale
 
 # =========================== #
 # ======= RUN PROMPTS ======= #
@@ -358,6 +399,7 @@ if not params['skipPrompts']:
 #win.flip()
 #event.waitKeys(keyList=params['triggerKey'])
 tStartSession = globalClock.getTime()
+SetFlipTimeToNow();
 AddToFlipTime(tStartSession+params['tStartup'])
 
 
@@ -368,72 +410,57 @@ AddToFlipTime(tStartSession+params['tStartup'])
 # log experiment start and set up
 logging.log(level=logging.EXP, msg='---START EXPERIMENT---')
 tStimVec = np.zeros(params['nTrials'])
-iRespVec = np.zeros(params['nTrials'])
-iRespVec[:]=np.nan
-rtVec = np.zeros(params['nTrials'])
-rtVec[:]=np.nan
+
+# Randomize image order for first block
+finalImages = colorOrder()
 
 # display images
 for block in range(0, params['nBlocks']):
     logging.log(level=logging.EXP,msg='==== START BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     # wait before first stimulus
-    fixation.draw()
-    # Show questions and options
-    rating,decisionTime, choiceHistory = RatingScales.ShowVAS(questions,options,win, questionDur=params['questionDur'], \
-        upKey=params['questionUpKey'],downKey=params['questionDownKey'],selectKey=params['questionSelectKey'],\
-        isEndedByKeypress=params['questionSelectAdvances'],textColor=params['textColor'],name='anxScale',stepSize=params['vasStepSize'])
-
+    fixation.autoDraw = True # Start drawing fixation cross
     win.logOnFlip(level=logging.EXP, msg='Display Fixation')
-    win.flip()
+    
+    # Show questions and options
+    ratingScale = MakePersistentVAS(questions[0], options[0], win,name='anxScale',pos=(0.,-0.45),scaleTextPos=[0.,-0.25], 
+                                    textColor=params['textColor'],stepSize=params['vasStepSize'],
+                                    labelYPos=-0.52648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, 
+                                    downKey=params['questionDownKey'],upKey=params['questionUpKey'],hideMouse=False)
+                                    
+    # Wait until it's time to display first stimulus
+    while (globalClock.getTime()<tNextFlip[0]):
+        win.flip() # to update ratingScale
+    fixation.autoDraw = False # stop  drawing fixation cross
+                  
     for iStim in range(0,params['nTrials']):
         if ((iStim + 1) % 5 == 0):
-            [respKey,tStimStart] = ShowImage(imageName=finalImages[iStim],stimDur=params['painDur'])
+            tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['painDur'])
             if iStim < params['nTrials']:
-            # pause
+                # pause
                 AddToFlipTime(params['painISI'])
         else:
-            [respKey,tStimStart] = ShowImage(imageName=finalImages[iStim],stimDur=params['stimDur'])
+            tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['stimDur'])
             if iStim < params['nTrials']:
                 # pause
                 AddToFlipTime(params['ISI'])
         # save stimulus time
         tStimVec[iStim] = tStimStart
-        if respKey is not None and respKey[0] in params['respKeys']:
-            iRespVec[iStim] = params['respKeys'].index(respKey[0])
-            rtVec[iStim] = respKey[1]-tStimStart
+    
+    # stop autoDraw
+    ratingScale.autoDraw = False
+    
+    # Log anxiety responses manually
+    logging.log(level=logging.DATA,msg='RatingScale %s: history=%s'%(ratingScale.name,ratingScale.getHistory()))
+    
+    # Randomize order of colors for next block
     if block < (params['nBlocks']-1):
         BetweenBlock()
         finalImages = colorOrder()
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
-ratingScale.autoDraw = False
-
-
 
 
 # Log end of experiment
 logging.log(level=logging.EXP, msg='--- END EXPERIMENT ---')
-
-# ============================= #
-# === CALCULATE PERFORMANCE === #
-# ============================= #
-
-# Print results
-print('===VAS Responses:===')
-for iQ in range(len(rating)):
-    print('Scale #%d: %.1f'%(iQ,rating[iQ]))
-
-# show user response times
-print('===Response times:===')
-print('Min RT = %.3f seconds'%(np.nanmin(rtVec)))
-print('Max RT = %.3f seconds'%(np.nanmax(rtVec)))
-print('Mean RT = %.3f seconds'%(np.nanmean(rtVec)))
-
-# report the keys pressed
-print('===Keypresses:===')
-for iResp in range(0,len(params['respKeys'])):
-    print('Responded %s: %.1f%%'%(params['respKeys'][iResp],np.nanmean(iRespVec==iResp)*100))
-    
-print('Did not respond: %.1f%%'%(np.mean(np.isnan(iRespVec))*100))
 
 # exit experiment
 CoolDown()
