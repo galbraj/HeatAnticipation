@@ -222,7 +222,7 @@ avgFile.write('session: %s\n'%expInfo['session'])
 avgFile.write('date: %s\n\n'%dateStr)
 
 
-
+#allCodes = list(range(1,len(allImages)+1))
 
 # ============================ #
 # ======= SUBFUNCTIONS ======= #
@@ -453,6 +453,7 @@ for block in range(0, params['nBlocks']):
     logging.log(level=logging.EXP,msg='==== START BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     # wait before first stimulus
     fixation.autoDraw = True # Start drawing fixation cross
+    #win.callOnFlip(SetPortData,data=params['codeBaseline'])
     win.logOnFlip(level=logging.EXP, msg='Display Fixation')
     
     # Show questions and options
@@ -469,6 +470,8 @@ for block in range(0, params['nBlocks']):
                   
     for iStim in range(0,params['nTrials']):
         if ((iStim + 1) % 5 == 0):
+            #portCode = len(allCodes)*(blockOrder[block]) + allCodes[iStim]
+            #win.callOnFlip(SetPortData,data=portCode)
             tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['painDur'])
             arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
