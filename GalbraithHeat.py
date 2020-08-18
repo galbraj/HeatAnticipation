@@ -12,6 +12,8 @@ from psychopy import core, gui, data, event, sound, logging
 # from psychopy import visual # visual causes a bug in the guis, so it's declared after all GUIs run.
 from psychopy.tools.filetools import fromFile, toFile # saving and loading parameter files
 import time as ts, numpy as np # for timing and array operations
+from scipy.integrate import simps
+from numpy import trapz
 import os, glob
 #import AppKit, os, glob # for monitor size detection, files - could not import on windows
 import BasicPromptTools # for loading/presenting prompts and questions
@@ -30,8 +32,8 @@ newParamsFilename = 'GalbraithHeatParams.psydat'
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
-    'nTrials': 40,            # number of trials in each block
-    'nBlocks': 6,             # number of blocks - need time to move electrode in between
+    'nTrials': 15,            # number of trials in each block
+    'nBlocks': 2,             # number of blocks - need time to move electrode in between
     'stimDur': 2,             # time when stimulus is presented (in seconds)
     'painDur': 8,             # time of heat sensation (in seconds)
     'ISI': 1,                 # time between when one stimulus disappears and the next appears (in seconds)
@@ -203,11 +205,8 @@ green = allImages[0:5]
 yellow = allImages [5:10]
 red = allImages [10:15]
 black = allImages [15:20]
-color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random
-print('green = %s'%green)
-print('yellow = %s'%yellow)
-print('red = %s'%red)
-print('black = %s'%black)
+color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random per block
+
 
 # create stimImage
 stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0], units='pix')
@@ -215,6 +214,15 @@ stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0]
 # read questions and answers from text files
 [topPrompts,bottomPrompts] = BasicPromptTools.ParsePromptFile(params['promptDir']+params['promptFile'])
 print('%d prompts loaded from %s'%(len(topPrompts),params['promptFile']))
+
+avgFile = open("anxScaleAvgs.csv", "w+")
+avgFile.write('filename: %s\n'%filename)
+avgFile.write('subject: %s\n'%expInfo['subject'])
+avgFile.write('session: %s\n'%expInfo['session'])
+avgFile.write('date: %s\n\n'%dateStr)
+
+
+
 
 # ============================ #
 # ======= SUBFUNCTIONS ======= #
@@ -272,7 +280,7 @@ def ShowImage(imageName, stimDur=float('Inf')):
     # Display the fixation cross
     if params['ISI']>0:# if there should be a fixation cross
         #fixation.draw() # draw it
-        win.logOnFlip(level=logging.EXP, msg='Display Fixation')
+        #win.logOnFlip(level=logging.EXP, msg='Display Fixation')
         win.flip()
         
     return tStimStart
@@ -344,6 +352,28 @@ def colorOrder():
     # initialize main image stimulus
     stimImage.setImage(newImages[0]) # initialize with first image
     return newImages
+    
+def integrateData(ratingScale, arrayLength, iStim, avgArray, block):
+    thisHistory = ratingScale.getHistory()[arrayLength - 1:]
+    logging.log(level=logging.DATA,msg='RatingScale %s: history=%s'%(finalImages[iStim],thisHistory))
+    if len(avgArray) == 0:
+        avgFile.write('%s,' %(block + 1))
+        avgFile.write(finalImages[iStim][9:-6] + ',')
+    x = [a[1] for a in thisHistory]
+    y = [a[0] for a in thisHistory]
+    if len(thisHistory) == 1:
+        avgRate = y[0]
+    else :
+        avgRate = trapz(y,x)/(x[-1] - x[0])
+    avgArray.append(avgRate)
+    logging.log(level=logging.DATA,msg='RatingScale %s: avgRate=%s'%(finalImages[iStim],avgRate))
+    avgFile.write('%.3f,' % (avgRate))
+    if len(avgArray) == 5 :
+        avgFile.write(str(sum(avgArray) / float(len(avgArray))) + '\n')
+        avgArray *= 0
+    arrayLength = len(ratingScale.getHistory())
+    return arrayLength
+
 
 def MakePersistentVAS(question, options, win, name='Question', textColor='black',pos=(0.,0.),stepSize=1., scaleTextPos=[0.,0.45], 
                   labelYPos=-0.27648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, downKey='down',upKey='up',selectKey=[],hideMouse=True):
@@ -363,7 +393,7 @@ def MakePersistentVAS(question, options, win, name='Question', textColor='black'
       textSize=0.8, textColor=textColor, textFont='Helvetica Bold', showValue=False, \
       showAccept=False, acceptKeys=selectKey, acceptPreText='key, click', acceptText='accept?', acceptSize=1.0, \
       leftKeys=downKey, rightKeys=upKey, respKeys=(), lineColor=textColor, skipKeys=[], \
-      mouseOnly=False, noMouse=hideMouse, size=2.0, stretch=1.0, pos=pos, minTime=0.4, maxTime=np.inf, \
+      mouseOnly=False, noMouse=hideMouse, size=1.0, stretch=1.0, pos=pos, minTime=0.4, maxTime=np.inf, \
       flipVert=False, depth=0, name=name, autoLog=True)
     # Fix text wrapWidth
     for iLabel in range(len(ratingScale.labels)):
@@ -414,6 +444,10 @@ tStimVec = np.zeros(params['nTrials'])
 # Randomize image order for first block
 finalImages = colorOrder()
 
+avgArray = []
+avgFile.write('Block,Color,Circ1,Circ2,Circ3,Circ4,Full,Avg\n')
+
+
 # display images
 for block in range(0, params['nBlocks']):
     logging.log(level=logging.EXP,msg='==== START BLOCK %d/%d ===='%(block+1,params['nBlocks']))
@@ -431,15 +465,19 @@ for block in range(0, params['nBlocks']):
     while (globalClock.getTime()<tNextFlip[0]):
         win.flip() # to update ratingScale
     fixation.autoDraw = False # stop  drawing fixation cross
+    arrayLength = 1
                   
     for iStim in range(0,params['nTrials']):
         if ((iStim + 1) % 5 == 0):
             tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['painDur'])
+            arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
                 # pause
                 AddToFlipTime(params['painISI'])
+
         else:
             tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['stimDur'])
+            arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
                 # pause
                 AddToFlipTime(params['ISI'])
@@ -457,10 +495,12 @@ for block in range(0, params['nBlocks']):
         BetweenBlock()
         finalImages = colorOrder()
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
+    avgFile.write('\n')
 
 
 # Log end of experiment
 logging.log(level=logging.EXP, msg='--- END EXPERIMENT ---')
+avgFile.close()
 
 # exit experiment
 CoolDown()
