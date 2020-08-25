@@ -20,6 +20,7 @@ import BasicPromptTools # for loading/presenting prompts and questions
 import RatingScales
 import random # for randomization of trials
 import string
+import math
 
 
 # ====================== #
@@ -177,7 +178,6 @@ tNextFlip = [0.0] # put in a list to make it mutable (weird quirk of python vari
 
 #create clocks and window
 globalClock = core.Clock()#to keep track of time
-trialClock = core.Clock()#to keep track of time
 win = visual.Window(screenRes, fullscr=params['fullScreen'], allowGUI=False, monitor='testMonitor', screen=params['screenToShow'], units='deg', name='win',color=params['screenColor'],colorSpace='rgb255')
 # create fixation cross
 fCS = params['fixCrossSize'] # size (for brevity)
@@ -374,6 +374,23 @@ def integrateData(ratingScale, arrayLength, iStim, avgArray, block):
     arrayLength = len(ratingScale.getHistory())
     return arrayLength
 
+def EveryHalf(ratingScale):
+    x = [a[1] for a in ratingScale.getHistory()]
+    y = [a[0] for a in ratingScale.getHistory()]
+    countTime = round(x[-1])
+    for b in np.arange(0, countTime, 0.5):
+        avgFile.write(str(b) + ',')
+    avgFile.write('\n')
+    i = 0
+    for a in range(len(x)):
+        if x[a] == i:
+            avgFile.write(str(y[a]) + ',')
+            i = i + 0.5
+        elif x[a] > i:
+            missed = math.ceil((x[a] - i)/0.5)
+            avgFile.write((str(y[a-1]) + ',') * missed)
+            i = i + 0.5 * missed
+    avgFile.write('\n\n')
 
 def MakePersistentVAS(question, options, win, name='Question', textColor='black',pos=(0.,0.),stepSize=1., scaleTextPos=[0.,0.45], 
                   labelYPos=-0.27648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, downKey='down',upKey='up',selectKey=[],hideMouse=True):
@@ -455,14 +472,13 @@ for block in range(0, params['nBlocks']):
     fixation.autoDraw = True # Start drawing fixation cross
     #win.callOnFlip(SetPortData,data=params['codeBaseline'])
     win.logOnFlip(level=logging.EXP, msg='Display Fixation')
-    
     # Show questions and options
     ratingScale = MakePersistentVAS(questions[0], options[0], win,name='anxScale',pos=(0.,-0.45),scaleTextPos=[0.,-0.25], 
                                     textColor=params['textColor'],stepSize=params['vasStepSize'],
                                     labelYPos=-0.52648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, 
                                     downKey=params['questionDownKey'],upKey=params['questionUpKey'],hideMouse=False)
                                     
-    # Wait until it's time to display first stimulus
+# Wait until it's time to display first stimulus
     while (globalClock.getTime()<tNextFlip[0]):
         win.flip() # to update ratingScale
     fixation.autoDraw = False # stop  drawing fixation cross
@@ -499,6 +515,7 @@ for block in range(0, params['nBlocks']):
         finalImages = colorOrder()
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     avgFile.write('\n')
+    EveryHalf(ratingScale)
 
 
 # Log end of experiment
