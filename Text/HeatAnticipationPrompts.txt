@@ -1,6 +1,15 @@
 ### Page 1 ###
-+You will see a growing circle of a certain color leading up to a heat sensation that you will experience once the whole screen is that color. Heat intensity increases from green, yellow, to most intense when red. Black color indicates you will at random either receive the lowest or highest intensity. You can rate your anxiety level throughout the study by moving the cursor on your screen.
++You are about to see a set of growing circles of a certain color. When the color fills up the screen you will feel a heat sensation.
 -Press any button to continue.
-### Page 2 ###
-+If you have any questions, please ask the experimenter now.
--WHEN YOU ARE READY TO BEGIN, press any button.
+### Page 2 ### 
++The color of the circles tells you how hot the heat will be:\n\nGreen is not hot.\nYellow is a little hot.\nRed is the most hot.\nBlack is either not hot or the most hot at random. 
+-Press any button to continue.
+### Page 3 ###
++There will be a scale on the screen at all times that you can move to indicate how anxious you are feeling at any point.
+-Press any button to continue.
+### Page 4 ###
++Anytime you see the cross on the screen, you are safe from any heat sensations.
+-Press any button to continue.
+### Page 5 ###
++If you have any questions, please ask the experimenter now. If you need to review these instructions, press 'r'.
+-WHEN YOU ARE READY TO BEGIN, press any other button.
