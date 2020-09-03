@@ -3,9 +3,11 @@
 # GalbraithHeat.py
 # Created 11/09/15 by DJ based on DistractionTask_practice_d3.py
 # Updated 11/10/15 by DJ - cleaned up comments
-# Adapted 7/7/2020 by JG - Heat Anticipation Task
+# Adapted 7/7/2020 by JG - Heat Anticipation Task: change stimuli and timings
 # Updated 7/16/20 by DJ - pickle->psydat extension, .JPG image extension, set flip time to now after instructions
 # Updated 7/29/20 by DJ - added VAS that's persistent throughout block, fixed color order, removed trial responses, simplified params
+# Updated 8/20/20 by JG - created functions for output
+# Updated 8/31/20 by JG - changed visuals, added heat input, added VAS pre, mid, post, modified instructions to start over
 
 
 from psychopy import core, gui, data, event, sound, logging 
@@ -33,13 +35,13 @@ newParamsFilename = 'GalbraithHeatParams.psydat'
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
-    'nTrials': 15,            # number of trials in each block
-    'nBlocks': 2,             # number of blocks - need time to move electrode in between
+    'nTrials': 10,            # number of trials in each block
+    'nBlocks': 6,             # number of blocks - need time to move electrode in between
     'stimDur': 2,             # time when stimulus is presented (in seconds)
     'painDur': 8,             # time of heat sensation (in seconds)
-    'ISI': 1,                 # time between when one stimulus disappears and the next appears (in seconds)
+    'ISI': 0,                 # time between when one stimulus disappears and the next appears (in seconds)
     'painISI': 10,            # time after the heat/pain stimulus
-    'tStartup': 2,            # pause time before starting first stimulus
+    'tStartup': 5,            # pause time before starting first stimulus
     'imageDir': 'Circles/',   # directory containing image stimluli
     'imageSuffix': '.JPG',    # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
 # declare prompt and question files
@@ -52,7 +54,15 @@ params = {
     'questionDur': 999.0,
     'vasStepSize': 0.5,       # how far the slider moves with a keypress (increase to move faster)
     'textColor':(0,0,0),      # black in rgb255 space or gray in rgb space
-
+    'PreVasMsg': "Let's do some rating scales.",             # Text shown BEFORE each VAS except the final one
+    'moodQuestionFile1': 'Questions/ERVas1RatingScales.txt', # Name of text file containing mood Q&As presented before run
+    'moodQuestionFile2': 'Questions/ERVasRatingScales.txt', # Name of text file containing mood Q&As presented after 3rd block
+    'moodQuestionFile3': 'Questions/ERVas4RatingScales.txt', # Name of text file containing mood Q&As presented after run
+    'questionSelectKey':'3', # select answer for VAS
+    'questionSelectAdvances': True, # will locking in an answer advance past an image rating?
+    'vasTextColor': (-1,-1,-1), # color of text in both VAS types (-1,-1,-1) = black
+    'vasMarkerSize': 0.1,   # in norm units (2 = whole screen)
+    'vasLabelYDist': 0.1,   # distance below line that VAS label/option text should be, in norm units
 # declare display parameters
     'fullScreen': True,       # run in full screen mode?
     'screenToShow': 0,        # display on primary screen (0) or secondary (1)?
@@ -85,10 +95,16 @@ try: # try to get a previous parameters file
     expInfo = fromFile('%s-lastExpInfo.psydat'%scriptName)
     expInfo['session'] +=1 # automatically increment session number
     expInfo['paramsFile'] = [expInfo['paramsFile'],'Load...']
+    expInfo['LHeat'] = 34.5
+    expInfo['MHeat'] = 35.5
+    expInfo['HHeat'] = 36.5
 except: # if not there then use a default set
     expInfo = {
         'subject':'1', 
         'session': 1, 
+        'LHeat': '34.5',
+        'MHeat': '35.5',
+        'HHeat': '36.5',
         'skipPrompts':False, 
         'paramsFile':['DEFAULT','Load...']}
 # overwrite params struct if you just saved a new parameter set
@@ -96,7 +112,7 @@ if saveParams:
     expInfo['paramsFile'] = [newParamsFilename,'Load...']
 
 #present a dialogue to change select params
-dlg = gui.DlgFromDict(expInfo, title=scriptName, order=['subject','session','skipPrompts','paramsFile'])
+dlg = gui.DlgFromDict(expInfo, title=scriptName, order=['subject','session','LHeat','MHeat','HHeat','skipPrompts','paramsFile'])
 if not dlg.OK:
     core.quit() # the user hit cancel, so exit
 
@@ -131,6 +147,9 @@ logging.log(level=logging.INFO, msg='---START PARAMETERS---')
 logging.log(level=logging.INFO, msg='filename: %s'%filename)
 logging.log(level=logging.INFO, msg='subject: %s'%expInfo['subject'])
 logging.log(level=logging.INFO, msg='session: %s'%expInfo['session'])
+logging.log(level=logging.INFO, msg='LHeat: %s'%expInfo['LHeat'])
+logging.log(level=logging.INFO, msg='MHeat: %s'%expInfo['MHeat'])
+logging.log(level=logging.INFO, msg='HHeat: %s'%expInfo['HHeat'])
 logging.log(level=logging.INFO, msg='date: %s'%dateStr)
 # log everything in the params struct
 for key in sorted(params.keys()): # in alphabetical order
@@ -215,6 +234,15 @@ stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0]
 [topPrompts,bottomPrompts] = BasicPromptTools.ParsePromptFile(params['promptDir']+params['promptFile'])
 print('%d prompts loaded from %s'%(len(topPrompts),params['promptFile']))
 
+[questions_vas1,options_vas1,answers_vas1] = BasicPromptTools.ParseQuestionFile(params['moodQuestionFile1'])
+print('%d questions loaded from %s'%(len(questions_vas1),params['moodQuestionFile1']))
+
+[questions_vas2,options_vas2,answers_vas2] = BasicPromptTools.ParseQuestionFile(params['moodQuestionFile2'])
+print('%d questions loaded from %s'%(len(questions_vas2),params['moodQuestionFile2']))
+
+[questions_vas3,options_vas3,answers_vas3] = BasicPromptTools.ParseQuestionFile(params['moodQuestionFile3'])
+print('%d questions loaded from %s'%(len(questions_vas3),params['moodQuestionFile3']))
+
 avgFile = open("anxScaleAvgs.csv", "w+")
 avgFile.write('filename: %s\n'%filename)
 avgFile.write('subject: %s\n'%expInfo['subject'])
@@ -235,6 +263,14 @@ def AddToFlipTime(tIncrement=1.0):
 # flip window as soon as possible
 def SetFlipTimeToNow():
     tNextFlip[0] = globalClock.getTime()
+    
+def WaitForFlipTime():
+    while (globalClock.getTime()<tNextFlip[0]):
+        keyList = event.getKeys()
+        # Check for escape characters
+        for key in keyList:
+            if key in ['q','escape']:
+                CoolDown()
 
 def ShowImage(imageName, stimDur=float('Inf')):
     # display info to experimenter
@@ -295,6 +331,41 @@ def ShowImage(imageName, stimDur=float('Inf')):
 
 
 # Handle end of a session
+
+def RunVas(questions,options,pos=(0.,-0.25),scaleTextPos=[0.,0.25],questionDur=params['questionDur'],isEndedByKeypress=params['questionSelectAdvances'],name='Vas'):
+    
+    # wait until it's time
+    WaitForFlipTime()
+    
+    # Show questions and options
+    [rating,decisionTime,choiceHistory] = RatingScales.ShowVAS(questions,options, win, questionDur=questionDur, \
+        upKey=params['questionUpKey'], downKey=params['questionDownKey'], selectKey=params['questionSelectKey'],\
+        isEndedByKeypress=isEndedByKeypress, textColor=params['vasTextColor'], name=name, pos=pos,\
+        scaleTextPos=scaleTextPos, labelYPos=pos[1]-params['vasLabelYDist'], markerSize=params['vasMarkerSize'],\
+        tickHeight=1,tickLabelWidth = 0.9)
+    
+    # Update next stim time
+    if isEndedByKeypress:
+        SetFlipTimeToNow() # no duration specified, so timing creep isn't an issue
+    else:
+        AddToFlipTime(questionDur*len(questions)) # add question duration * # of questions
+
+def RunMoodVas(questions,options,name='MoodVas'):
+    
+    # Wait until it's time
+    WaitForFlipTime()
+
+    
+    # display pre-VAS prompt
+    if not params['skipPrompts']:
+        BasicPromptTools.RunPrompts([params['PreVasMsg']],["Press any button to continue."],win,message1,message2)
+    
+    # Display this VAS
+    #win.callOnFlip(SetPortData,data=params['codeVas'])
+    RunVas(questions,options,questionDur=float("inf"), isEndedByKeypress=True,name=name)
+    
+    
+    
 def CoolDown():
     
     # Stop drawing ratingScale (if it exists)
@@ -410,7 +481,7 @@ def MakePersistentVAS(question, options, win, name='Question', textColor='black'
       textSize=0.8, textColor=textColor, textFont='Helvetica Bold', showValue=False, \
       showAccept=False, acceptKeys=selectKey, acceptPreText='key, click', acceptText='accept?', acceptSize=1.0, \
       leftKeys=downKey, rightKeys=upKey, respKeys=(), lineColor=textColor, skipKeys=[], \
-      mouseOnly=False, noMouse=hideMouse, size=1.0, stretch=1.0, pos=pos, minTime=0.4, maxTime=np.inf, \
+      mouseOnly=False, noMouse=hideMouse, size=1.0, stretch=1.5, pos=pos, minTime=0.4, maxTime=np.inf, \
       flipVert=False, depth=0, name=name, autoLog=True)
     # Fix text wrapWidth
     for iLabel in range(len(ratingScale.labels)):
@@ -432,10 +503,14 @@ def MakePersistentVAS(question, options, win, name='Question', textColor='black'
 # =========================== #
 # ======= RUN PROMPTS ======= #
 # =========================== #
-
-# display prompts
-if not params['skipPrompts']:
-    BasicPromptTools.RunPrompts(topPrompts,bottomPrompts,win,message1,message2)
+def RunPrompts():
+    # display prompts
+    if not params['skipPrompts']:
+        BasicPromptTools.RunPrompts(topPrompts,bottomPrompts,win,message1,message2)
+        thisKey = event.waitKeys() # use if need to repeat instructions
+        if thisKey[0] == 'r':
+            RunPrompts()
+        tNextFlip[0] = globalClock.getTime() + 5.0
 
 #message1.setText("Waiting for scanner to start...")
 # wait for scanner
@@ -445,14 +520,19 @@ if not params['skipPrompts']:
 #win.logOnFlip(level=logging.EXP, msg='Display WaitingForScanner')
 #win.flip()
 #event.waitKeys(keyList=params['triggerKey'])
-tStartSession = globalClock.getTime()
-SetFlipTimeToNow();
-AddToFlipTime(tStartSession+params['tStartup'])
+#tStartSession = globalClock.getTime()
+#SetFlipTimeToNow();
+#AddToFlipTime(tStartSession+params['tStartup'])
 
 
 # =========================== #
 # ===== MAIN EXPERIMENT ===== #
 # =========================== #
+
+RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
+
+
+RunPrompts()
 
 # log experiment start and set up
 logging.log(level=logging.EXP, msg='---START EXPERIMENT---')
@@ -467,15 +547,22 @@ avgFile.write('Block,Color,Circ1,Circ2,Circ3,Circ4,Full,Avg\n')
 
 # display images
 for block in range(0, params['nBlocks']):
+    if block == 3:
+        RunMoodVas(questions_vas2,options_vas2,name='MidRun')
+        AddToFlipTime(180)
+        BasicPromptTools.RunPrompts(["Thank you for your responses."],["Press the space bar to continue."],win,message1,message2)
+        thisKey = event.waitKeys(keyList=['space']) # use space bar to avoid accidental advancing
+        if thisKey :
+            tNextFlip[0] = globalClock.getTime() + 2.0
     logging.log(level=logging.EXP,msg='==== START BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     # wait before first stimulus
     fixation.autoDraw = True # Start drawing fixation cross
     #win.callOnFlip(SetPortData,data=params['codeBaseline'])
     win.logOnFlip(level=logging.EXP, msg='Display Fixation')
     # Show questions and options
-    ratingScale = MakePersistentVAS(questions[0], options[0], win,name='anxScale',pos=(0.,-0.45),scaleTextPos=[0.,-0.25], 
+    ratingScale = MakePersistentVAS(questions[0], options[0], win,name='anxScale',pos=(0.,-0.70),scaleTextPos=[0.,-0.50], 
                                     textColor=params['textColor'],stepSize=params['vasStepSize'],
-                                    labelYPos=-0.52648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, 
+                                    labelYPos=-0.75, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, 
                                     downKey=params['questionDownKey'],upKey=params['questionUpKey'],hideMouse=False)
                                     
 # Wait until it's time to display first stimulus
@@ -493,6 +580,7 @@ for block in range(0, params['nBlocks']):
             if iStim < params['nTrials']:
                 # pause
                 AddToFlipTime(params['painISI'])
+                fixation.autoDraw = True
 
         else:
             tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['stimDur'])
@@ -516,6 +604,8 @@ for block in range(0, params['nBlocks']):
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     avgFile.write('\n')
     EveryHalf(ratingScale)
+
+RunMoodVas(questions_vas3,options_vas3,name='PostRun')
 
 
 # Log end of experiment
