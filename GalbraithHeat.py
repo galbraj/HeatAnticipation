@@ -35,12 +35,11 @@ newParamsFilename = 'GalbraithHeatParams.psydat'
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
-    'nTrials': 10,            # number of trials in each block
-    'nBlocks': 6,             # number of blocks - need time to move electrode in between
+    'nTrials': 20,            # number of trials in each block
+    'nBlocks': 3,             # number of blocks - need time to move electrode in between
     'stimDur': 2,             # time when stimulus is presented (in seconds)
     'painDur': 8,             # time of heat sensation (in seconds)
     'ISI': 0,                 # time between when one stimulus disappears and the next appears (in seconds)
-    'painISI': 10,            # time after the heat/pain stimulus
     'tStartup': 5,            # pause time before starting first stimulus
     'imageDir': 'Circles/',   # directory containing image stimluli
     'imageSuffix': '.JPG',    # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
@@ -226,6 +225,8 @@ red = allImages [10:15]
 black = allImages [15:20]
 color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random per block
 
+painISI = [6,8,12,14,6,8,12,14]
+random.shuffle(painISI)
 
 # create stimImage
 stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0], units='pix')
@@ -512,18 +513,6 @@ def RunPrompts():
             RunPrompts()
         tNextFlip[0] = globalClock.getTime() + 5.0
 
-#message1.setText("Waiting for scanner to start...")
-# wait for scanner
-#message2.setText("(Press '%c' to override.)"%params['triggerKey'].upper())
-#message1.draw()
-#message2.draw()
-#win.logOnFlip(level=logging.EXP, msg='Display WaitingForScanner')
-#win.flip()
-#event.waitKeys(keyList=params['triggerKey'])
-#tStartSession = globalClock.getTime()
-#SetFlipTimeToNow();
-#AddToFlipTime(tStartSession+params['tStartup'])
-
 
 # =========================== #
 # ===== MAIN EXPERIMENT ===== #
@@ -544,7 +533,6 @@ finalImages = colorOrder()
 avgArray = []
 avgFile.write('Block,Color,Circ1,Circ2,Circ3,Circ4,Full,Avg\n')
 
-
 # display images
 for block in range(0, params['nBlocks']):
     if block == 3:
@@ -553,7 +541,7 @@ for block in range(0, params['nBlocks']):
         BasicPromptTools.RunPrompts(["Thank you for your responses."],["Press the space bar to continue."],win,message1,message2)
         thisKey = event.waitKeys(keyList=['space']) # use space bar to avoid accidental advancing
         if thisKey :
-            tNextFlip[0] = globalClock.getTime() + 2.0
+            tNextFlip[0] = globalClock.getTime() + 5.0
     logging.log(level=logging.EXP,msg='==== START BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     # wait before first stimulus
     fixation.autoDraw = True # Start drawing fixation cross
@@ -570,7 +558,8 @@ for block in range(0, params['nBlocks']):
         win.flip() # to update ratingScale
     fixation.autoDraw = False # stop  drawing fixation cross
     arrayLength = 1
-                  
+    painITI = 0
+              
     for iStim in range(0,params['nTrials']):
         if ((iStim + 1) % 5 == 0):
             #portCode = len(allCodes)*(blockOrder[block]) + allCodes[iStim]
@@ -579,7 +568,8 @@ for block in range(0, params['nBlocks']):
             arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
                 # pause
-                AddToFlipTime(params['painISI'])
+                AddToFlipTime(painISI[painITI])
+                painITI += 1
                 fixation.autoDraw = True
 
         else:
