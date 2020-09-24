@@ -29,20 +29,21 @@ import math
 # ===== PARAMETERS ===== #
 # ====================== #
 # Save the parameters declared below?
-saveParams = True;
+saveParams = False;
 newParamsFilename = 'GalbraithHeatParams.psydat'
 
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
-    'nTrials': 20,            # number of trials in each block
-    'nBlocks': 3,             # number of blocks - need time to move electrode in between
-    'stimDur': 2,             # time when stimulus is presented (in seconds)
+    'nTrials': 10,            # number of trials in each block
+    'nBlocks': 6,             # number of blocks - need time to move electrode in between
+    'stimDur': 4,             # time when stimulus is presented (in seconds)
     'painDur': 8,             # time of heat sensation (in seconds)
     'ISI': 0,                 # time between when one stimulus disappears and the next appears (in seconds)
     'tStartup': 5,            # pause time before starting first stimulus
     'imageDir': 'Circles/',   # directory containing image stimluli
     'imageSuffix': '.JPG',    # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
+    'pracDir':'PracticeSquares/',    #directory containing practice squares
 # declare prompt and question files
     'skipPrompts': False,     # go right to the scanner-wait page
     'promptDir': 'Text/',     # directory containing prompts and questions files
@@ -54,6 +55,7 @@ params = {
     'vasStepSize': 0.5,       # how far the slider moves with a keypress (increase to move faster)
     'textColor':(0,0,0),      # black in rgb255 space or gray in rgb space
     'PreVasMsg': "Let's do some rating scales.",             # Text shown BEFORE each VAS except the final one
+    'introPractice': 'Questions/PracticeRating.txt', #Name of text file containing practice rating scales
     'moodQuestionFile1': 'Questions/ERVas1RatingScales.txt', # Name of text file containing mood Q&As presented before run
     'moodQuestionFile2': 'Questions/ERVasRatingScales.txt', # Name of text file containing mood Q&As presented after 3rd block
     'moodQuestionFile3': 'Questions/ERVas4RatingScales.txt', # Name of text file containing mood Q&As presented after run
@@ -67,12 +69,12 @@ params = {
     'screenToShow': 0,        # display on primary screen (0) or secondary (1)?
     'fixCrossSize': 50,       # size of cross, in pixels
     'fixCrossPos': [0,0],     # (x,y) pos of fixation cross displayed before each stimulus (for gaze drift correction)
-    'screenColor':(255,255,255) # in rgb255 space: (r,g,b) all between 0 and 255 - white
+    'screenColor':(217,217,217), # in rgb255 space: (r,g,b) all between 0 and 255 - light grey
 # parallel port parameters
-#    'sendPortEvents': False, # send event markers to biopac computer via parallel port
-#    'portAddress': 0xE050,  # 0xE050,  0x0378,  address of parallel port
-#    'codeBaseline': 31,     # parallel port code for baseline period (make sure it's greater than nBlocks*2*len(imageNames)!)
-#    'codeVas': 32,          # parallel port code for mood ratings (make sure it's greater than nBlocks*2*len(imageNames)!)
+    'sendPortEvents': True, # send event markers to biopac computer via parallel port
+    'portAddress': 0xE050,  # 0xE050,  0x0378,  address of parallel port
+    'codeBaseline': 144,     # parallel port code for baseline period 
+
 }
 
 # save parameters - isn't working on personal laptop
@@ -87,23 +89,23 @@ if saveParams:
 
 # ========================== #
 # ===== SET UP LOGGING ===== #
-# ========================== # didn't change
+# ========================== #
 scriptName = os.path.basename(__file__)
 scriptName = os.path.splitext(scriptName)[0] #% remove extension
 try: # try to get a previous parameters file
     expInfo = fromFile('%s-lastExpInfo.psydat'%scriptName)
     expInfo['session'] +=1 # automatically increment session number
     expInfo['paramsFile'] = [expInfo['paramsFile'],'Load...']
-    expInfo['LHeat'] = 34.5
-    expInfo['MHeat'] = 35.5
-    expInfo['HHeat'] = 36.5
+    expInfo['LHeat'] = 36.0
+    expInfo['MHeat'] = 41.0
+    expInfo['HHeat'] = 46.0
 except: # if not there then use a default set
     expInfo = {
         'subject':'1', 
         'session': 1, 
-        'LHeat': '34.5',
-        'MHeat': '35.5',
-        'HHeat': '36.5',
+        'LHeat': '36.0',
+        'MHeat': '41.0',
+        'HHeat': '46.0',
         'skipPrompts':False, 
         'paramsFile':['DEFAULT','Load...']}
 # overwrite params struct if you just saved a new parameter set
@@ -171,19 +173,19 @@ logging.log(level=logging.INFO, msg='---END PARAMETERS---')
 #else:
 #    screenRes = [800,600]
 
-screenRes = [1920,1080]
+screenRes = [1024,768]
 
 
 # ========================== #
 # == SET UP PARALLEL PORT == #
 # ========================== #
 #
-#if params['sendPortEvents']:
-#    from psychopy import parallel
-#    port = parallel.ParallelPort(address=params['portAddress'])
-#    port.setData(0) # initialize to all zeros
-#else:
-#    print("Parallel port not used.")
+if params['sendPortEvents']:
+    from psychopy import parallel
+    port = parallel.ParallelPort(address=params['portAddress'])
+    port.setData(0) # initialize to all zeros
+else:
+    print("Parallel port not used.")
 
 
 # ========================== #
@@ -211,6 +213,8 @@ print('%d questions loaded from %s'%(len(questions),params['questionFile']))
 
 # get stimulus files
 allImages = glob.glob(params['imageDir']+"*"+params['imageSuffix']) # get all files in <imageDir> that end in .<imageSuffix>.
+pracImages = glob.glob(params['pracDir']+"*"+params['imageSuffix']) # get all files in <imageDir> that end in .<imageSuffix>.
+promptImage = 'TIMprompt2.jpg'
 # put in alpha order
 allImages.sort()
 print('%d images loaded from %s'%(len(allImages),params['imageDir']))
@@ -225,7 +229,7 @@ red = allImages [10:15]
 black = allImages [15:20]
 color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random per block
 
-painISI = [6,8,12,14,6,8,12,14]
+painISI = [12,14,16,18,12,14,16,18]
 random.shuffle(painISI)
 
 # create stimImage
@@ -244,6 +248,9 @@ print('%d questions loaded from %s'%(len(questions_vas2),params['moodQuestionFil
 [questions_vas3,options_vas3,answers_vas3] = BasicPromptTools.ParseQuestionFile(params['moodQuestionFile3'])
 print('%d questions loaded from %s'%(len(questions_vas3),params['moodQuestionFile3']))
 
+[questions_prac,options_prac,answers_prac] = BasicPromptTools.ParseQuestionFile(params['introPractice'])
+print('%d questions loaded from %s'%(len(questions_prac),params['introPractice']))
+
 avgFile = open("anxScaleAvgs.csv", "w+")
 avgFile.write('filename: %s\n'%filename)
 avgFile.write('subject: %s\n'%expInfo['subject'])
@@ -251,7 +258,6 @@ avgFile.write('session: %s\n'%expInfo['session'])
 avgFile.write('date: %s\n\n'%dateStr)
 
 
-#allCodes = list(range(1,len(allImages)+1))
 
 # ============================ #
 # ======= SUBFUNCTIONS ======= #
@@ -273,7 +279,7 @@ def WaitForFlipTime():
             if key in ['q','escape']:
                 CoolDown()
 
-def ShowImage(imageName, stimDur=float('Inf')):
+def ShowImage(imageName, block, stimDur=float('Inf')):
     # display info to experimenter
     print('Showing Stimulus %s'%imageName) 
     
@@ -282,6 +288,7 @@ def ShowImage(imageName, stimDur=float('Inf')):
     # Wait until it's time to display
     while (globalClock.getTime()<tNextFlip[0]):
         win.flip() # to update ratingScale
+    SetPort(imageName,block+1)
     # Start drawing stim image every frame
     stimImage.autoDraw = True; 
     ratingScale.autoDraw = False; # to put it on top?
@@ -323,13 +330,20 @@ def ShowImage(imageName, stimDur=float('Inf')):
     return tStimStart
 
 # Send parallel port event
-#def SetPortData(data):
-#    if params['sendPortEvents']:
-#        logging.log(level=logging.EXP,msg='set port %s to %d'%(format(params['portAddress'],'#04x'),data))
-#        port.setData(data)
-#    else:
-#        print('Port event: %d'%data)
+def SetPortData(data):
+    if params['sendPortEvents']:
+        logging.log(level=logging.EXP,msg='set port %s to %d'%(format(params['portAddress'],'#04x'),data))
+        port.setData(data)
+        print(data)
+    else:
+        print('Port event: %d'%data)
 
+
+#use color, size, and block to calculate data for SetPortData
+def SetPort(image, block):
+    color = int(image[8])
+    size = int(image[-5])
+    SetPortData((color-1)*6**2 + (size - 1)*6 + (block - 1))
 
 # Handle end of a session
 
@@ -351,12 +365,121 @@ def RunVas(questions,options,pos=(0.,-0.25),scaleTextPos=[0.,0.25],questionDur=p
     else:
         AddToFlipTime(questionDur*len(questions)) # add question duration * # of questions
 
+
+def PersistentScale(question, options, win, name='Question', textColor='black',pos=(0.,0.),stepSize=1., scaleTextPos=[0.,0.45], 
+                  labelYPos=-0.27648, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, questionDur=float('inf'), isEndedByKeypress=True, 
+                  downKey='down',upKey='up',selectKey='enter', hideMouse=True, repeatDelay=0.5):
+    # import packages
+    from psychopy import visual # for ratingScale
+    import numpy as np # for tick locations
+    from pyglet.window import key # for press-and-hold functionality
+
+    # set up
+    nQuestions = len(question)
+    rating = [None]*nQuestions
+    decisionTime = [None]*nQuestions
+    choiceHistory = [[0]]*nQuestions
+    # Set up pyglet key handler
+    keyState=key.KeyStateHandler()
+    win.winHandle.push_handlers(keyState)
+    # Get attributes for key handler (put _ in front of numbers)
+    if downKey[0].isdigit():
+        downKey_attr = '_%s'%downKey
+    else:
+        downKey_attr = downKey
+    if upKey[0].isdigit():
+        upKey_attr = '_%s'%upKey
+    else:
+        upKey_attr = upKey
+
+
+    for iQ in range(nQuestions):
+        # Make triangle
+        markerStim = visual.ShapeStim(win,lineColor=textColor,fillColor=textColor,vertices=((-markerSize/2.,markerSize*np.sqrt(5./4.)),(markerSize/2.,markerSize*np.sqrt(5./4.)),(0,0)),units='norm',closeShape=True,name='triangle');
+        
+        tickMarks = np.linspace(0,100,len(options[iQ])).tolist()
+        if tickLabelWidth==0.0: # if default value, determine automatically to fit all tick mark labels
+          tickWrapWidth = (tickMarks[1]-tickMarks[0])*0.9/100 # *.9 for extra space, /100 for norm units
+        else: # use user-specified value
+          tickWrapWidth = tickLabelWidth;
+        
+        # Create ratingScale
+        ratingScale = visual.RatingScale(win, scale=question[iQ], \
+          low=0., high=100., markerStart=50., precision=1., labels=options[iQ], tickMarks=tickMarks, tickHeight=tickHeight, \
+          marker=markerStim, markerColor=textColor, markerExpansion=1, singleClick=False, disappear=False, \
+          textSize=0.8, textColor=textColor, textFont='Helvetica Bold', showValue=False, \
+          showAccept=False, acceptKeys=selectKey, acceptPreText='key, click', acceptText='accept?', acceptSize=1.0, \
+          leftKeys=downKey, rightKeys=upKey, respKeys=(), lineColor=textColor, skipKeys=[], \
+          mouseOnly=False, noMouse=hideMouse, size=1.0, stretch=1.5, pos=pos, minTime=0.4, maxTime=np.inf, \
+          flipVert=False, depth=0, name=name, autoLog=True)
+        # Fix text wrapWidth
+        for iLabel in range(len(ratingScale.labels)):
+          ratingScale.labels[iLabel].wrapWidth = tickWrapWidth
+          ratingScale.labels[iLabel].pos = (ratingScale.labels[iLabel].pos[0],labelYPos)
+          ratingScale.labels[iLabel].alignHoriz = 'center'
+        # Move main text
+        ratingScale.scaleDescription.pos = scaleTextPos
+
+        # Display until time runs out (or key is pressed, if specified)
+        win.logOnFlip(level=logging.EXP, msg='Display %s%d'%(name,iQ))
+        tStart = ts.time()
+        while (ts.time()-tStart)<questionDur:
+            # Look for keypresses
+            if keyState[getattr(key,downKey_attr)]: #returns True if left key is pressed
+                tPress = ts.time()
+                valPress = ratingScale.markerPlacedAt
+                keyPressed = downKey_attr
+                step = -stepSize
+            elif keyState[getattr(key,upKey_attr)]: #returns True if the right key is pressed
+                tPress = ts.time()
+                valPress = ratingScale.markerPlacedAt
+                keyPressed = upKey_attr
+                step = stepSize
+            else:
+                keyPressed = None
+
+            # Handle sliding for held keys
+            while (keyPressed is not None) and ((ts.time()-tStart)<questionDur):
+                # update time
+                durPress = ts.time()-tPress
+                # update display
+                ratingScale.draw()
+                win.flip()
+                # check for key release
+                if keyState[getattr(key,keyPressed)]==False:
+                    break
+                # Update marker
+                if durPress>repeatDelay:
+                    ratingScale.markerPlacedAt = valPress + (durPress-repeatDelay)*step*60 # *60 for refresh rate
+                    ratingScale.markerPlacedAt = max(ratingScale.markerPlacedAt,ratingScale.low)
+                    ratingScale.markerPlacedAt = min(ratingScale.markerPlacedAt,ratingScale.high)
+            # Check for response
+            if isEndedByKeypress and not ratingScale.noResponse:
+                break
+            # Redraw
+            ratingScale.draw()
+            win.flip()
+
+        # Log outputs
+        rating[iQ] = ratingScale.getRating()
+        decisionTime[iQ] = ratingScale.getRT()
+        choiceHistory[iQ] = ratingScale.getHistory()
+
+        # if no response, log manually
+        if ratingScale.noResponse:
+            logging.log(level=logging.DATA,msg='RatingScale %s: (no response) rating=%g'%(ratingScale.name,rating[iQ]))
+            logging.log(level=logging.DATA,msg='RatingScale %s: rating RT=%g'%(ratingScale.name,decisionTime[iQ]))
+            logging.log(level=logging.DATA,msg='RatingScale %s: history=%s'%(ratingScale.name,choiceHistory[iQ]))
+
+    
+    return ratingScale
+    
 def RunMoodVas(questions,options,name='MoodVas'):
     
     # Wait until it's time
     WaitForFlipTime()
 
-    
+    SetPortData(params['codeBaseline'])
     # display pre-VAS prompt
     if not params['skipPrompts']:
         BasicPromptTools.RunPrompts([params['PreVasMsg']],["Press any button to continue."],win,message1,message2)
@@ -365,8 +488,19 @@ def RunMoodVas(questions,options,name='MoodVas'):
     #win.callOnFlip(SetPortData,data=params['codeVas'])
     RunVas(questions,options,questionDur=float("inf"), isEndedByKeypress=True,name=name)
     
+    BasicPromptTools.RunPrompts(["For the next minute or so, we're just going to get some baseline measures."],["You can rest during this time."],win,message1,message2)
+    tNextFlip[0] = globalClock.getTime()
     
-    
+    # display fixation before first stimulus
+    fixation.draw()
+    #win.callOnFlip(SetPortData,data=params['codeBaseline'])
+    win.logOnFlip(level=logging.EXP, msg='Display Fixation')
+    # wait until it's time to show screen
+    WaitForFlipTime()
+    # show screen and update next flip time
+    win.flip()
+    AddToFlipTime(2)
+
 def CoolDown():
     
     # Stop drawing ratingScale (if it exists)
@@ -395,7 +529,11 @@ def CoolDown():
 
 #handle transition between blocks
 def BetweenBlock():
-    AddToFlipTime(180)
+    while (globalClock.getTime()<tNextFlip[0]):
+        win.flip() # to update ratingScale
+    # stop autoDraw
+    ratingScale.autoDraw = False
+    AddToFlipTime(300)
     message1.setText("This concludes the current block. Please wait for further instruction before continuing.")
     message2.setText("Press SPACE to continue.")
     win.logOnFlip(level=logging.EXP, msg='BetweenBlock')
@@ -505,13 +643,46 @@ def MakePersistentVAS(question, options, win, name='Question', textColor='black'
 # ======= RUN PROMPTS ======= #
 # =========================== #
 def RunPrompts():
-    # display prompts
+    BasicPromptTools.RunPrompts(["Let's practice with the rating scale you'll be using today."],["Press the space bar to continue."],win,message1,message2)
+
+    pracScale = PersistentScale(questions_prac, options_prac, win,name='pracScale',pos=(0.,-0.70),scaleTextPos=[0.,-0.50], 
+                                    textColor=params['textColor'],stepSize=params['vasStepSize'],
+                                    labelYPos=-0.75, markerSize=0.1, tickHeight=0.0, tickLabelWidth=0.0, 
+                                    downKey=params['questionDownKey'],upKey=params['questionUpKey'],selectKey=params['questionSelectKey'],
+                                    hideMouse=False)
+    
+        # display prompts
     if not params['skipPrompts']:
+        BasicPromptTools.RunPrompts(["You are about to see a set of growing squares of a certain color. When the color fills up the screen you will feel a heat pain on your arm."],["Press any button to continue and see an example."],win,message1,message2)
+        
+        tNextFlip[0] = globalClock.getTime()
+        for i in range(5) :
+            WaitForFlipTime()
+            stimImage.setImage(pracImages[i])
+            # Start drawing stim image every frame
+            stimImage.autoDraw = True; 
+            win.flip()
+            # set up next win flip time after this one
+            AddToFlipTime(params['stimDur'])
+        
+        WaitForFlipTime()   
+        AddToFlipTime(180)
+        stimImage.setImage(promptImage)
+        stimImage.autoDraw = True; 
+        win.flip()
+        
+        key = event.waitKeys()
+        stimImage.autoDraw = False;
+        
+        tNextFlip[0] = globalClock.getTime()
+        WaitForFlipTime()
+        
         BasicPromptTools.RunPrompts(topPrompts,bottomPrompts,win,message1,message2)
         thisKey = event.waitKeys() # use if need to repeat instructions
         if thisKey[0] == 'r':
             RunPrompts()
-        tNextFlip[0] = globalClock.getTime() + 5.0
+    tNextFlip[0] = globalClock.getTime() + 5.0
+
 
 
 # =========================== #
@@ -520,8 +691,10 @@ def RunPrompts():
 
 RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
 
+WaitForFlipTime()
 
 RunPrompts()
+
 
 # log experiment start and set up
 logging.log(level=logging.EXP, msg='---START EXPERIMENT---')
@@ -537,7 +710,7 @@ avgFile.write('Block,Color,Circ1,Circ2,Circ3,Circ4,Full,Avg\n')
 for block in range(0, params['nBlocks']):
     if block == 3:
         RunMoodVas(questions_vas2,options_vas2,name='MidRun')
-        AddToFlipTime(180)
+        WaitForFlipTime()
         BasicPromptTools.RunPrompts(["Thank you for your responses."],["Press the space bar to continue."],win,message1,message2)
         thisKey = event.waitKeys(keyList=['space']) # use space bar to avoid accidental advancing
         if thisKey :
@@ -562,18 +735,20 @@ for block in range(0, params['nBlocks']):
               
     for iStim in range(0,params['nTrials']):
         if ((iStim + 1) % 5 == 0):
-            #portCode = len(allCodes)*(blockOrder[block]) + allCodes[iStim]
-            #win.callOnFlip(SetPortData,data=portCode)
-            tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['painDur'])
+            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['painDur'])
             arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
+                itiPort = list(finalImages[iStim])
+                itiPort[-5] = "6"
+                "".join(itiPort)
+                SetPort(itiPort,block+1)
                 # pause
                 AddToFlipTime(painISI[painITI])
                 painITI += 1
                 fixation.autoDraw = True
 
         else:
-            tStimStart = ShowImage(imageName=finalImages[iStim],stimDur=params['stimDur'])
+            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['stimDur'])
             arrayLength = integrateData(ratingScale, arrayLength, iStim, avgArray, block)
             if iStim < params['nTrials']:
                 # pause
@@ -581,8 +756,6 @@ for block in range(0, params['nBlocks']):
         # save stimulus time
         tStimVec[iStim] = tStimStart
     
-    # stop autoDraw
-    ratingScale.autoDraw = False
     
     # Log anxiety responses manually
     logging.log(level=logging.DATA,msg='RatingScale %s: history=%s'%(ratingScale.name,ratingScale.getHistory()))
@@ -591,11 +764,14 @@ for block in range(0, params['nBlocks']):
     if block < (params['nBlocks']-1):
         BetweenBlock()
         finalImages = colorOrder()
+        random.shuffle(painISI)
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     avgFile.write('\n')
     EveryHalf(ratingScale)
 
+WaitForFlipTime()
 RunMoodVas(questions_vas3,options_vas3,name='PostRun')
+WaitForFlipTime()
 
 
 # Log end of experiment

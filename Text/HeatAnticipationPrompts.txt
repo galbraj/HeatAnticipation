@@ -1,15 +1,10 @@
 ### Page 1 ###
-+You are about to see a set of growing circles of a certain color. When the color fills up the screen you will feel a heat sensation.
++There will be a scale on the screen at all times that you can move to indicate how anxious you are feeling at any point.\n\nIt is really important that you update the scale constantly throughout the experiment so that we know how you are feeling at all times.
 -Press any button to continue.
-### Page 2 ### 
-+The color of the circles tells you how hot the heat will be:\n\nGreen is not hot.\nYellow is a little hot.\nRed is the most hot.\nBlack is either not hot or the most hot at random. 
+### Page 2 ###
++Anytime you see the cross, +, on the screen, you are safe from any heat sensations.
 -Press any button to continue.
 ### Page 3 ###
-+There will be a scale on the screen at all times that you can move to indicate how anxious you are feeling at any point.
--Press any button to continue.
-### Page 4 ###
-+Anytime you see the cross on the screen, you are safe from any heat sensations.
--Press any button to continue.
-### Page 5 ###
 +If you have any questions, please ask the experimenter now. If you need to review these instructions, press 'r'.
--WHEN YOU ARE READY TO BEGIN, press any other button.
+-Press any other button to continue.
+
