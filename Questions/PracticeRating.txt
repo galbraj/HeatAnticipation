@@ -1,0 +1,39 @@
+### QUESTION 1: Anxiety
+?How anxious do you feel right now?
+-Not anxious
+-
+-
+-
+-Very anxious
+
+### QUESTION 2: Nervous
+?If you were really nervous, how would you rate your anxiety? 
+-Not anxious
+-
+-
+-
+-Very anxious
+
+### QUESTION 3: Calm
+?If you were really calm and carefree, how would you rate your anxiety? 
+-Not anxious
+-
+-
+-
+-Very anxious
+
+### QUESTION 4: Average
+?If you felt so-so or average, how would you rate your anxiety?
+-Not anxious
+-
+-
+-
+-Very anxious
+
+### QUESTION 5: Anxiety2
+?One more time, how anxious do you feel right now? 
+-Not anxious
+-
+-
+-
+-Very anxious

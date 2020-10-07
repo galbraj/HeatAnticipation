@@ -1,0 +1,146 @@
+2.3909 	INFO 	Loaded SoundDevice with PortAudio V19.6.0-devel, revision 396fe4b6699ae929d3a685b3ef8a7e97396139a4
+2.3910 	INFO 	sound is using audioLib: sounddevice
+26.1805 	INFO 	---START PARAMETERS---
+26.1805 	INFO 	filename: GalbraithHeat-1-13-Sep_30_1809
+26.1805 	INFO 	subject: 1
+26.1805 	INFO 	session: 13
+26.1805 	INFO 	LHeat: 37.0
+26.1805 	INFO 	MHeat: 41.5
+26.1805 	INFO 	HHeat: 39.5
+26.1805 	INFO 	date: Sep_30_1809
+26.1806 	INFO 	ISI: 0
+26.1806 	INFO 	PreVasMsg: Let's do some rating scales.
+26.1806 	INFO 	codeBaseline: 144
+26.1806 	INFO 	convExcel: tempConv.xlsx
+26.1806 	INFO 	fixCrossPos: [0, 0]
+26.1806 	INFO 	fixCrossSize: 50
+26.1806 	INFO 	fullScreen: True
+26.1806 	INFO 	imageDir: Circles/
+26.1807 	INFO 	imageSuffix: .JPG
+26.1807 	INFO 	introPractice: Questions/PracticeRating.txt
+26.1807 	INFO 	moodQuestionFile1: Questions/ERVas1RatingScales.txt
+26.1807 	INFO 	moodQuestionFile2: Questions/ERVasRatingScales.txt
+26.1807 	INFO 	moodQuestionFile3: Questions/ERVas4RatingScales.txt
+26.1807 	INFO 	nBlocks: 6
+26.1807 	INFO 	nTrials: 10
+26.1807 	INFO 	painDur: 8
+26.1807 	INFO 	portAddress: 57424
+26.1807 	INFO 	pracDir: PracticeSquares/
+26.1807 	INFO 	promptDir: Text/
+26.1808 	INFO 	promptFile: HeatAnticipationPrompts.txt
+26.1808 	INFO 	questionDownKey: 1
+26.1808 	INFO 	questionDur: 999.0
+26.1808 	INFO 	questionFile: Text/AnxietyScale.txt
+26.1808 	INFO 	questionSelectAdvances: True
+26.1808 	INFO 	questionSelectKey: 3
+26.1808 	INFO 	questionUpKey: 2
+26.1808 	INFO 	screenColor: (217, 217, 217)
+26.1808 	INFO 	screenToShow: 0
+26.1808 	INFO 	sendPortEvents: True
+26.1808 	INFO 	skipPrompts: False
+26.1809 	INFO 	stimDur: 4
+26.1809 	INFO 	tStartup: 5
+26.1809 	INFO 	textColor: (0, 0, 0)
+26.1810 	INFO 	vasLabelYDist: 0.1
+26.1810 	INFO 	vasMarkerSize: 0.1
+26.1810 	INFO 	vasStepSize: 0.5
+26.1810 	INFO 	vasTextColor: (-1, -1, -1)
+26.1810 	INFO 	---END PARAMETERS---
+27.2323 	INFO 	Loaded monitor calibration from ['2018_11_13 11:26']
+28.2444 	EXP 	Created win = Window(allowGUI=False, allowStencil=False, args=UNKNOWN, autoLog=True, bitsMode=UNKNOWN, blendMode='avg', color=array([ 217.,  217.,  217.]), colorSpace='rgb255', fullscr=UNKNOWN, gamma=None, kwargs=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x131208F0>, multiSample=False, name='win', numSamples=2, pos=[0, 0], screen=0, size=array([1024,  768]), stereo=False, units='deg', useFBO=False, useRetina=False, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType=u'pyglet')
+28.2558 	EXP 	Created fixCross = ShapeStim(autoDraw=False, autoLog=True, closeShape=False, contrast=1.0, depth=0, fillColor=None, fillColorSpace='rgb', interpolate=True, lineColor='#000000', lineColorSpace='hex', lineWidth=3.0, name='fixCross', opacity=1.0, ori=array(0.0), pos=array([ 0.,  0.]), size=array([ 1.,  1.]), units='pix', vertices=ndarray(...), win=Window(...), windingRule=None)
+28.3042 	EXP 	Created topMsg = TextStim(alignHoriz='center', alignVert='center', antialias=True, autoLog=True, bold=False, color='#000000', colorSpace='hex', contrast=1.0, depth=0, flipHoriz=False, flipVert=False, font='', fontFiles=[], height=0.1, italic=False, name='topMsg', opacity=1.0, ori=0.0, pos=array([ 0. ,  0.5]), rgb=array([0, 0, 0]), text='aaa', units='norm', win=Window(...), wrapWidth=1.5)
+28.3086 	EXP 	Created bottomMsg = TextStim(alignHoriz='center', alignVert='center', antialias=True, autoLog=True, bold=False, color='#000000', colorSpace='hex', contrast=1.0, depth=0, flipHoriz=False, flipVert=False, font='', fontFiles=[], height=0.1, italic=False, name='bottomMsg', opacity=1.0, ori=0.0, pos=array([ 0. , -0.5]), rgb=array([0, 0, 0]), text='bbb', units='norm', win=Window(...), wrapWidth=1.5)
+28.3400 	EXP 	Created ImageStimulus = ImageStim(autoLog=True, color=array([ 1.,  1.,  1.]), colorSpace='rgb', contrast=1.0, depth=0, flipHoriz=False, flipVert=False, image='Circles\\4Black_1.JPG', interpolate=False, mask=None, maskParams=None, name='ImageStimulus', opacity=1.0, ori=0.0, pos=array([ 0.,  0.]), size=array([1024,  768]), texRes=128, units='pix', win=Window(...))
+28.3784 	EXP 	---START EXPERIMENT---
+28.4006 	EXP 	==== START BLOCK 1/6 ====
+28.4021 	EXP 	Created triangle = ShapeStim(autoDraw=False, autoLog=True, closeShape=True, contrast=1.0, depth=0, fillColor=array([ 0.,  0.,  0.]), fillColorSpace='rgb', interpolate=True, lineColor=array([ 0.,  0.,  0.]), lineColorSpace='rgb', lineWidth=1.5, name='triangle', opacity=1.0, ori=array(0.0), pos=array([ 0.,  0.]), size=array([ 1.,  1.]), units='norm', vertices=ndarray(...), win=Window(...), windingRule=None)
+28.4788 	EXP 	Created anxScale = RatingScale(acceptKeys=['return'], acceptPreText=UNKNOWN, acceptSize=UNKNOWN, acceptText=UNKNOWN, autoLog=True, choices=False, depth=0, disappear=False, flipVert=False, high=100, kwargs=UNKNOWN, labels=list(...), leftKeys=['1'], lineColor=(0, 0, 0), low=0, marker=ShapeStim(...), markerColor=(0, 0, 0), markerExpansion=UNKNOWN, markerStart=50.0, maxTime=inf, minTime=0.4, mouseOnly=False, name='anxScale', noMouse=False, pos=[0.0, -0.7], precision=1, respKeys=[], rightKeys=['2'], scale='How anxious do you feel right now?', self=UNKNOWN, showAccept=False, showValue=False, singleClick=False, size=0.6, skipKeys=[], stretch=1.5, textColor=(0, 0, 0), textFont='Helvetica Bold', textSize=0.09600000000000002, tickHeight=0.0, tickMarks=100.0, win=Window(...))
+28.5177 	EXP 	ImageStimulus: size = array([1024,  768])
+28.5177 	EXP 	ImageStimulus: image = 'Circles\\3Red_1.JPG'
+28.5177 	EXP 	fixCross: autoDraw = True
+28.5177 	EXP 	Display Fixation
+28.5177 	EXP 	anxScale: flipVert = False
+28.5177 	EXP 	anxScale: autoLog = True
+28.5177 	EXP 	anxScale: autoDraw = True
+28.5177 	EXP 	Display anxScale
+28.5402 	EXP 	set port 0xe050 to 72
+28.5414 	EXP 	set medoc 227
+30.0810 	EXP 	fixCross: autoDraw = False
+30.0810 	EXP 	ImageStimulus: size = array([1024,  768])
+30.0810 	EXP 	ImageStimulus: image = 'Circles\\3Red_1.JPG'
+30.0810 	EXP 	ImageStimulus: autoDraw = True
+30.0810 	EXP 	anxScale: autoDraw = False
+30.0810 	EXP 	anxScale: autoDraw = True
+30.0810 	EXP 	Display Circles\3Red_1.JPG
+31.2374 	DATA 	RatingScale Circles\3Red_1.JPG: history=[(50.0, 0.0)]
+31.2374 	DATA 	RatingScale Circles\3Red_1.JPG: avgRate=50.0
+31.2644 	EXP 	set port 0xe050 to 78
+31.3000 	EXP 	ImageStimulus: autoDraw = False
+31.3000 	EXP 	ImageStimulus: size = array([1024,  768])
+31.3000 	EXP 	ImageStimulus: image = 'Circles\\3Red_2.JPG'
+31.3000 	EXP 	ImageStimulus: autoDraw = True
+31.3000 	EXP 	anxScale: autoDraw = False
+31.3000 	EXP 	anxScale: autoDraw = True
+31.3000 	EXP 	Display Circles\3Red_2.JPG
+35.2435 	DATA 	RatingScale Circles\3Red_2.JPG: history=[(50.0, 0.0)]
+35.2436 	DATA 	RatingScale Circles\3Red_2.JPG: avgRate=50.0
+35.2694 	EXP 	set port 0xe050 to 84
+35.2766 	EXP 	ImageStimulus: autoDraw = False
+35.2766 	EXP 	ImageStimulus: size = array([1024,  768])
+35.2766 	EXP 	ImageStimulus: image = 'Circles\\3Red_3.JPG'
+35.2766 	EXP 	ImageStimulus: autoDraw = True
+35.2766 	EXP 	anxScale: autoDraw = False
+35.2766 	EXP 	anxScale: autoDraw = True
+35.2766 	EXP 	Display Circles\3Red_3.JPG
+39.2437 	DATA 	RatingScale Circles\3Red_3.JPG: history=[(50.0, 0.0)]
+39.2437 	DATA 	RatingScale Circles\3Red_3.JPG: avgRate=50.0
+39.2744 	EXP 	set port 0xe050 to 90
+39.2969 	EXP 	ImageStimulus: autoDraw = False
+39.2969 	EXP 	ImageStimulus: size = array([1024,  768])
+39.2969 	EXP 	ImageStimulus: image = 'Circles\\3Red_4.JPG'
+39.2969 	EXP 	ImageStimulus: autoDraw = True
+39.2969 	EXP 	anxScale: autoDraw = False
+39.2969 	EXP 	anxScale: autoDraw = True
+39.2969 	EXP 	Display Circles\3Red_4.JPG
+43.2345 	DATA 	RatingScale Circles\3Red_4.JPG: history=[(50.0, 0.0)]
+43.2345 	DATA 	RatingScale Circles\3Red_4.JPG: avgRate=50.0
+43.2588 	EXP 	set port 0xe050 to 96
+43.2814 	EXP 	ImageStimulus: autoDraw = False
+43.2814 	EXP 	ImageStimulus: size = array([1024,  768])
+43.2814 	EXP 	ImageStimulus: image = 'Circles\\3Red_5.JPG'
+43.2814 	EXP 	ImageStimulus: autoDraw = True
+43.2814 	EXP 	anxScale: autoDraw = False
+43.2814 	EXP 	anxScale: autoDraw = True
+43.2814 	EXP 	Display Circles\3Red_5.JPG
+52.7940 	DATA 	RatingScale Circles\3Red_5.JPG: history=[(50.0, 0.0)]
+52.7940 	DATA 	RatingScale Circles\3Red_5.JPG: avgRate=50.0
+52.7941 	EXP 	set port 0xe050 to 102
+52.8486 	EXP 	ImageStimulus: autoDraw = False
+52.8486 	EXP 	fixCross: autoDraw = True
+52.8486 	EXP 	ImageStimulus: size = array([1024,  768])
+52.8486 	EXP 	ImageStimulus: image = 'Circles\\1Green_1.JPG'
+65.2484 	EXP 	set port 0xe050 to 0
+65.2496 	EXP 	set medoc 166
+66.7852 	EXP 	ImageStimulus: autoDraw = True
+66.7852 	EXP 	anxScale: autoDraw = False
+66.7852 	EXP 	anxScale: autoDraw = True
+66.7852 	EXP 	Display Circles\1Green_1.JPG
+69.2316 	DATA 	RatingScale Circles\1Green_1.JPG: history=[(50.0, 0.0)]
+69.2316 	DATA 	RatingScale Circles\1Green_1.JPG: avgRate=50.0
+69.2581 	EXP 	set port 0xe050 to 6
+69.2942 	EXP 	ImageStimulus: autoDraw = False
+69.2942 	EXP 	ImageStimulus: size = array([1024,  768])
+69.2942 	EXP 	ImageStimulus: image = 'Circles\\1Green_2.JPG'
+69.2942 	EXP 	ImageStimulus: autoDraw = True
+69.2942 	EXP 	anxScale: autoDraw = False
+69.2942 	EXP 	anxScale: autoDraw = True
+69.2942 	EXP 	Display Circles\1Green_2.JPG
+69.3569 	DATA 	Keypress: escape
+69.4191 	EXP 	anxScale: autoDraw = False
+69.4191 	EXP 	ImageStimulus: autoDraw = False
+69.4191 	EXP 	topMsg: text = "That's the end! "
+69.4191 	EXP 	bottomMsg: text = "Press 'q' or 'escape' to end the session."
+69.4191 	EXP 	Display TheEnd
+69.8337 	DATA 	Keypress: escape
+70.0387 	EXP 	win: mouseVisible = True

@@ -11,6 +11,7 @@
 
 
 from psychopy import core, gui, data, event, sound, logging 
+import pandas as pd
 # from psychopy import visual # visual causes a bug in the guis, so it's declared after all GUIs run.
 from psychopy.tools.filetools import fromFile, toFile # saving and loading parameter files
 import time as ts, numpy as np # for timing and array operations
@@ -23,6 +24,10 @@ import RatingScales
 import random # for randomization of trials
 import string
 import math
+import socket
+import devices
+from devices import Pathway
+
 
 
 # ====================== #
@@ -74,6 +79,7 @@ params = {
     'sendPortEvents': True, # send event markers to biopac computer via parallel port
     'portAddress': 0xE050,  # 0xE050,  0x0378,  address of parallel port
     'codeBaseline': 144,     # parallel port code for baseline period 
+    'convExcel': 'tempConv.xlsx',  #excel file with temp to binary code mappings
 
 }
 
@@ -176,9 +182,9 @@ logging.log(level=logging.INFO, msg='---END PARAMETERS---')
 screenRes = [1024,768]
 
 
-# ========================== #
-# == SET UP PARALLEL PORT == #
-# ========================== #
+# ==================================== #
+# == SET UP PARALLEL PORT AND MEDOC == #
+# ==================================== #
 #
 if params['sendPortEvents']:
     from psychopy import parallel
@@ -186,6 +192,14 @@ if params['sendPortEvents']:
     port.setData(0) # initialize to all zeros
 else:
     print("Parallel port not used.")
+
+
+my_pathway = Pathway(ip='10.150.254.8',port_number=20121)
+
+#Check status of medoc connection
+response = my_pathway.status()
+print(response)
+
 
 
 # ========================== #
@@ -257,6 +271,7 @@ avgFile.write('subject: %s\n'%expInfo['subject'])
 avgFile.write('session: %s\n'%expInfo['session'])
 avgFile.write('date: %s\n\n'%dateStr)
 
+excelTemps = pd.read_excel(params['convExcel'])
 
 
 # ============================ #
@@ -297,6 +312,12 @@ def ShowImage(imageName, block, stimDur=float('Inf')):
     # log & flip window to display image
     win.logOnFlip(level=logging.EXP, msg='Display %s'%imageName)
     win.flip()
+    if int(imageName[-5]) == 5:
+        my_pathway.start()
+        ts.sleep(3)
+        my_pathway.trigger()
+        ts.sleep(5)
+        response = my_pathway.stop()
     tStimStart = globalClock.getTime() # record time when window flipped
     # set up next win flip time after this one
     AddToFlipTime(stimDur) # add to tNextFlip[0]
@@ -339,11 +360,36 @@ def SetPortData(data):
         print('Port event: %d'%data)
 
 
+
 #use color, size, and block to calculate data for SetPortData
 def SetPort(image, block):
     color = int(image[8])
     size = int(image[-5])
     SetPortData((color-1)*6**2 + (size - 1)*6 + (block - 1))
+    if size == 1:
+        if color == 1:
+            code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['LHeat']))]
+            logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+        elif color == 2:
+            code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['MHeat']))]
+            logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+        elif color == 3:
+            code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['HHeat']))]
+            logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+        elif color == 4:
+            code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['LHeat']))]
+            logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+        response = my_pathway.program(code.iat[0,1])
+        my_pathway.start()
+        #ts.sleep(2)
+        my_pathway.trigger()
+#    if size == 5:
+#        my_pathway.start()
+#        ts.sleep(2)
+#        my_pathway.trigger()
+#        ts.sleep(5)
+#        response = my_pathway.stop()
+    
 
 # Handle end of a session
 
@@ -689,11 +735,11 @@ def RunPrompts():
 # ===== MAIN EXPERIMENT ===== #
 # =========================== #
 
-RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
-
-WaitForFlipTime()
-
-RunPrompts()
+#RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
+#
+#WaitForFlipTime()
+#
+#RunPrompts()
 
 
 # log experiment start and set up
