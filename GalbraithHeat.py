@@ -43,7 +43,7 @@ params = {
     'nTrials': 10,            # number of trials in each block
     'nBlocks': 6,             # number of blocks - need time to move electrode in between
     'stimDur': 4,             # time when stimulus is presented (in seconds)
-    'painDur': 8,             # time of heat sensation (in seconds)
+    'painDur': 10,             # time of heat sensation (in seconds)
     'ISI': 0,                 # time between when one stimulus disappears and the next appears (in seconds)
     'tStartup': 5,            # pause time before starting first stimulus
     'imageDir': 'Circles/',   # directory containing image stimluli
@@ -243,6 +243,13 @@ red = allImages [10:15]
 black = allImages [15:20]
 color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random per block
 
+#for "random" black heat or no heat
+randBlack = [0,0,0,0,0,0,1,1,1,1,1,1]
+random.shuffle(randBlack)
+randBlackCount = 0
+sleepRand = [0, 0.5, 1, 1.5, 2]
+
+#for "random" ITI 12-18 avg 15 sec
 painISI = [12,14,16,18,12,14,16,18]
 random.shuffle(painISI)
 
@@ -314,7 +321,7 @@ def ShowImage(imageName, block, stimDur=float('Inf')):
     win.flip()
     if int(imageName[-5]) == 5:
         my_pathway.start()
-        ts.sleep(3)
+        ts.sleep(3 + random.sample(sleepRand,1))
         my_pathway.trigger()
         ts.sleep(5)
         response = my_pathway.stop()
@@ -377,19 +384,15 @@ def SetPort(image, block):
             code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['HHeat']))]
             logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
         elif color == 4:
-            code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['LHeat']))]
-            logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+            if randBlack[randBlackCount] == 1:
+                code = excelTemps[excelTemps['Temp'].astype(str).str.contains(str(expInfo['HHeat']))]
+                logging.log(level=logging.EXP,msg='set medoc %s'%(code.iat[0,1]))
+            randBlackCount += 1
         response = my_pathway.program(code.iat[0,1])
         my_pathway.start()
         #ts.sleep(2)
         my_pathway.trigger()
-#    if size == 5:
-#        my_pathway.start()
-#        ts.sleep(2)
-#        my_pathway.trigger()
-#        ts.sleep(5)
-#        response = my_pathway.stop()
-    
+
 
 # Handle end of a session
 
