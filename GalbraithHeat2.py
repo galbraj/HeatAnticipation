@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """Display images from a specified folder and present them to the subject."""
-# GalbraithHeat.py
+# GalbraithHeat2.py
 # Created 11/09/15 by DJ based on DistractionTask_practice_d3.py
 # Updated 11/10/15 by DJ - cleaned up comments
 # Adapted 7/7/2020 by JG - Heat Anticipation Task: change stimuli and timings
@@ -40,15 +40,12 @@ newParamsFilename = 'GalbraithHeatParams.psydat'
 # Declare primary task parameters.
 params = {
 # Declare stimulus and response parameters
-    'nTrials': 10,            # number of trials in each block
+    'nTrials': 2,            # number of trials in each block
     'nBlocks': 6,             # number of blocks - need time to move electrode in between
     'stimDur': 4,             # time when stimulus is presented (in seconds)
     'painDur': 10,             # time of heat sensation (in seconds)
     'ISI': 0,                 # time between when one stimulus disappears and the next appears (in seconds)
     'tStartup': 5,            # pause time before starting first stimulus
-    'imageDir': 'Circles/',   # directory containing image stimluli
-    'imageSuffix': '.JPG',    # images will be selected randomly (without replacement) from all files in imageDir that end in imageSuffix.
-    'pracDir':'PracticeSquares/',    #directory containing practice squares
 # declare prompt and question files
     'skipPrompts': False,     # go right to the scanner-wait page
     'promptDir': 'Text/',     # directory containing prompts and questions files
@@ -226,22 +223,12 @@ message2 = visual.TextStim(win, pos=[0,-.5], wrapWidth=1.5, color='#000000', ali
 print('%d questions loaded from %s'%(len(questions),params['questionFile']))
 
 # get stimulus files
-allImages = glob.glob(params['imageDir']+"*"+params['imageSuffix']) # get all files in <imageDir> that end in .<imageSuffix>.
-pracImages = glob.glob(params['pracDir']+"*"+params['imageSuffix']) # get all files in <imageDir> that end in .<imageSuffix>.
 promptImage = 'TIMprompt2.jpg'
-# put in alpha order
-allImages.sort()
-print('%d images loaded from %s'%(len(allImages),params['imageDir']))
-# make sure there are enough images - should always be 20
-if len(allImages)< 20:
-    raise ValueError("# images found in '%s' (%d) is less than # trials (%d)!"%(params['imageDir'],len(allImages),params['nTrials']))
+stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image = promptImage, units='pix')
 
-# slice allImages into different colors 
-green = allImages[0:5]
-yellow = allImages [5:10]
-red = allImages [10:15]
-black = allImages [15:20]
+
 color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random per block
+random.shuffle(color_list)
 
 #for "random" black heat or no heat
 randBlack = [0,0,0,0,0,0,1,1,1,1,1,1]
@@ -250,11 +237,10 @@ randBlackCount = 0
 sleepRand = [0, 0.5, 1, 1.5, 2]
 
 #for "random" ITI 12-18 avg 15 sec
+painITI = 0
 painISI = [12,14,16,18,12,14,16,18]
 random.shuffle(painISI)
 
-# create stimImage
-stimImage = visual.ImageStim(win, pos=[0,0], name='ImageStimulus',image=black[0], units='pix')
 
 # read questions and answers from text files
 [topPrompts,bottomPrompts] = BasicPromptTools.ParsePromptFile(params['promptDir']+params['promptFile'])
@@ -392,6 +378,36 @@ def WaitForFlipTime():
             if key in ['q','escape']:
                 CoolDown()
 
+def GrowingSquare(color):
+    global painITI
+    if color == 1:
+        col = 'darkseagreen'
+    elif color == 2:
+        col = 'khaki'
+    elif color == 3:
+        col = 'lightcoral'
+    elif color == 4:
+        col = 'black'
+    else:
+        col = 'gray'
+    
+    rect = visual.Rect(win=win, units = 'norm', size = 0.1, fillColor = col, lineColor = col)
+    rect.draw()
+    WaitForFlipTime()
+    fixation.autoDraw = False
+    win.flip()
+
+    for i in range(90):
+        core.wait(0.133)
+        rect.size = rect.size + 0.044
+        rect.draw()
+        win.flip()
+        ++i
+    if col is not 'gray':
+        core.wait(params['painDur'])
+
+
+    
 def ShowImage(imageName, block, stimDur=float('Inf')):
     # display info to experimenter
     print('Showing Stimulus %s'%imageName) 
@@ -675,7 +691,7 @@ def BetweenBlock():
     while (globalClock.getTime()<tNextFlip[0]):
         win.flip() # to update ratingScale
     # stop autoDraw
-    ratingScale.autoDraw = False
+    anxSlider.autoDraw = False
     AddToFlipTime(300)
     message1.setText("This concludes the current block. Please wait for further instruction before continuing.")
     message2.setText("Press SPACE to continue.")
@@ -687,25 +703,7 @@ def BetweenBlock():
     if thisKey :
         tNextFlip[0] = globalClock.getTime() + 2.0
 
-#creates a new random color order to ensure each color is presented exactly twice at random within each block
-def colorOrder():
-    #randomize order
-    color_list = [1,2,3,4,1,2,3,4] #1-green, 2-yellow, 3-red, 4-black, ensure each color is presented twice at random
-    newImages = []
-    random.shuffle(color_list)
-    for i in color_list:
-        if i == 1 :
-            newImages = newImages + green
-        elif i == 2 :
-            newImages = newImages + yellow
-        elif i == 3 :
-            newImages = newImages + red
-        else :
-            newImages = newImages + black
-    # initialize main image stimulus
-    stimImage.setImage(newImages[0]) # initialize with first image
-    return newImages
-    
+
 def integrateData(ratingScale, arrayLength, iStim, avgArray, block):
     thisHistory = ratingScale.getHistory()[arrayLength - 1:]
     logging.log(level=logging.DATA,msg='RatingScale %s: history=%s'%(finalImages[iStim],thisHistory))
@@ -798,15 +796,8 @@ def RunPrompts():
     if not params['skipPrompts']:
         BasicPromptTools.RunPrompts(["You are about to see a set of growing squares of a certain color. When the color fills up the screen you will feel a heat pain on your arm."],["Press any button to continue and see an example."],win,message1,message2)
         
-        tNextFlip[0] = globalClock.getTime()
-        for i in range(5) :
-            WaitForFlipTime()
-            stimImage.setImage(pracImages[i])
-            # Start drawing stim image every frame
-            stimImage.autoDraw = True; 
-            win.flip()
-            # set up next win flip time after this one
-            AddToFlipTime(params['stimDur'])
+        GrowingSquare(5)
+        event.waitKeys()
         
         WaitForFlipTime()   
         AddToFlipTime(180)
@@ -832,9 +823,9 @@ def RunPrompts():
 # ===== MAIN EXPERIMENT ===== #
 # =========================== #
 
-RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
+#RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
 #
-WaitForFlipTime()
+#WaitForFlipTime()
 #
 RunPrompts()
 
@@ -843,8 +834,6 @@ RunPrompts()
 logging.log(level=logging.EXP, msg='---START EXPERIMENT---')
 tStimVec = np.zeros(params['nTrials'])
 
-# Randomize image order for first block
-finalImages = colorOrder()
 
 avgArray = []
 avgFile.write('Block,Color,Circ1,Circ2,Circ3,Circ4,Full,Avg\n')
@@ -875,29 +864,37 @@ for block in range(0, params['nBlocks']):
     fixation.autoDraw = False # stop  drawing fixation cross
     arrayLength = 1
     painITI = 0
-              
-    for iStim in range(0,params['nTrials']):
-        if ((iStim + 1) % 5 == 0):
-            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['painDur'])
-            arrayLength = integrateData(anxSlider, arrayLength, iStim, avgArray, block)
-            if iStim < params['nTrials']:
-                itiPort = list(finalImages[iStim])
-                itiPort[-5] = "6"
-                "".join(itiPort)
-                SetPort(itiPort,block+1)
-                # pause
-                AddToFlipTime(painISI[painITI])
-                painITI += 1
-                fixation.autoDraw = True
-
-        else:
-            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['stimDur'])
-            arrayLength = integrateData(anxSlider, arrayLength, iStim, avgArray, block)
-            if iStim < params['nTrials']:
-                # pause
-                AddToFlipTime(params['ISI'])
-        # save stimulus time
-        tStimVec[iStim] = tStimStart
+    for trial in range(params['nTrials']):
+        GrowingSquare(color_list[trial])
+        tNextFlip[0] = globalClock.getTime() + (painISI[painITI])
+        painITI += 1
+        fixation.autoDraw = True
+        win.logOnFlip(level=logging.EXP, msg='Display Fixation')
+        while (globalClock.getTime()<tNextFlip[0]):
+            win.flip() # to update ratingScale
+        fixation.autoDraw = False # stop  drawing fixation cross
+#    for iStim in range(0,params['nTrials']):
+#        if ((iStim + 1) % 5 == 0):
+#            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['painDur'])
+#            arrayLength = integrateData(anxSlider, arrayLength, iStim, avgArray, block)
+#            if iStim < params['nTrials']:
+#                itiPort = list(finalImages[iStim])
+#                itiPort[-5] = "6"
+#                "".join(itiPort)
+#                SetPort(itiPort,block+1)
+#                # pause
+#                AddToFlipTime(painISI[painITI])
+#                painITI += 1
+#                fixation.autoDraw = True
+#
+#        else:
+#            tStimStart = ShowImage(imageName=finalImages[iStim], block=block, stimDur=params['stimDur'])
+#            arrayLength = integrateData(anxSlider, arrayLength, iStim, avgArray, block)
+#            if iStim < params['nTrials']:
+#                # pause
+#                AddToFlipTime(params['ISI'])
+#        # save stimulus time
+#        tStimVec[iStim] = tStimStart
     
     
     # Log anxiety responses manually
@@ -906,7 +903,7 @@ for block in range(0, params['nBlocks']):
     # Randomize order of colors for next block
     if block < (params['nBlocks']-1):
         BetweenBlock()
-        finalImages = colorOrder()
+        random.shuffle(color_list)
         random.shuffle(painISI)
     logging.log(level=logging.EXP,msg='==== END BLOCK %d/%d ===='%(block+1,params['nBlocks']))
     avgFile.write('\n')
