@@ -675,7 +675,7 @@ def BetweenBlock():
     while (globalClock.getTime()<tNextFlip[0]):
         win.flip() # to update ratingScale
     # stop autoDraw
-    ratingScale.autoDraw = False
+    anxSlider.autoDraw = False
     AddToFlipTime(300)
     message1.setText("This concludes the current block. Please wait for further instruction before continuing.")
     message2.setText("Press SPACE to continue.")
@@ -832,11 +832,11 @@ def RunPrompts():
 # ===== MAIN EXPERIMENT ===== #
 # =========================== #
 
-RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
+#RunMoodVas(questions_vas1,options_vas1,name='PreVAS')
 #
-WaitForFlipTime()
+#WaitForFlipTime()
 #
-RunPrompts()
+#RunPrompts()
 
 
 # log experiment start and set up
